@@ -15,7 +15,6 @@
   "scripts": {
     "build": "node scripts/validate-package.mjs",
     "build:proto": "sh WAProto/GenerateStatics.sh",
-    "dev": "node Example/example.js",
     "lint": "node scripts/validate-package.mjs",
     "test": "node tests/smoke.mjs && node tests/auth-state.mjs",
     "prepack": "node scripts/validate-package.mjs",
