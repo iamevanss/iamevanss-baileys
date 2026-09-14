@@ -34,6 +34,7 @@ jobs:
           node --check lib/branding.js
           node --check lib/Signal/lid-mapping.js
           node --check lib/Utils/jid-resolver.js
+          node --check lib/Utils/terminal.js
           node --check lib/Utils/use-sqlite-auth-state.js
           node --check lib/Store/make-cache-manager-store.js
 
@@ -42,6 +43,7 @@ jobs:
           node tests/smoke.mjs
           node tests/auth-state.mjs
           node tests/lid-resolver.mjs
+          node tests/terminal.mjs
 
       - name: Validate package contents
         run: npm pack --dry-run --ignore-scripts
