@@ -43,7 +43,11 @@ Custom 8-character pairing codes are supported by the pairing layer when a custo
 For normal deployments, use a persistent authentication state. SQLite authentication is available through `useSqliteAuthState` and uses Node's built-in `node:sqlite` support.
 
 ```js
+import makeWASocket, { useSqliteAuthState } from '@iamvanss/baileys'
+
 const { state, saveCreds } = await useSqliteAuthState('./auth/auth.db')
+const sock = makeWASocket({ auth: state })
+sock.ev.on('creds.update', saveCreds)
 ```
 
 SQLite auth requires a Node.js release that provides `node:sqlite` (Node 22.5+).
@@ -55,6 +59,8 @@ The package exposes the existing in-memory store along with persistent and cache
 ```js
 import { makeInMemoryStore, makeCacheManagerStore } from '@iamvanss/baileys'
 ```
+
+The in-memory store also provides `writeToFile`, `readFromFile`, and `writeToFileInterval` helpers for JSON persistence.
 
 ## Channel force-join
 
