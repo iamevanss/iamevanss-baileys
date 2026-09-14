@@ -4,7 +4,7 @@
   "description": "A customized WhatsApp Web API library built on the Baileys ecosystem, with pairing, authentication, connection handling, media support, events, and extensible utilities.",
   "type": "module",
   "main": "lib/index.js",
-  "files": ["lib/**/*", "WAProto/**/*", "engine-requirements.js"],
+  "files": ["lib/**/*", "WAProto/**/*", "engine-requirements.js", "LICENSE", "README.md"],
   "keywords": ["whatsapp", "baileys", "whatsapp-web", "whatsapp-bot", "multi-device"],
   "homepage": "https://github.com/iamevanss/iamevanss-baileys",
   "repository": {"type": "git", "url": "git+https://github.com/iamevanss/iamevanss-baileys.git"},
@@ -13,12 +13,12 @@
   "author": "Evans (Vanss)",
   "engines": {"node": ">=20.0.0"},
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node scripts/validate-package.mjs",
     "build:proto": "sh WAProto/GenerateStatics.sh",
-    "dev": "tsx ./Example/example.ts",
-    "lint": "tsc --noEmit && eslint src --ext .js,.ts",
-    "test": "node --experimental-vm-modules ./node_modules/.bin/jest --testMatch '**/*.test.ts'",
-    "prepack": "npm run build",
+    "dev": "node Example/example.js",
+    "lint": "node scripts/validate-package.mjs",
+    "test": "node tests/smoke.mjs && node tests/auth-state.mjs",
+    "prepack": "node scripts/validate-package.mjs",
     "preinstall": "node ./engine-requirements.js"
   },
   "dependencies": {
