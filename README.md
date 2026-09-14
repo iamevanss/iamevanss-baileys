@@ -28,7 +28,6 @@ npm install @iamvanss/baileys
 - Luxu protocol utilities
 - Advanced message-builder APIs
 - Familiar Baileys-compatible socket architecture
-- Optional channel force-join support
 
 ## Pairing code
 
@@ -62,18 +61,14 @@ import { makeInMemoryStore, makeCacheManagerStore } from '@iamvanss/baileys'
 
 The in-memory store also provides `writeToFile`, `readFromFile`, and `writeToFileInterval` helpers for JSON persistence.
 
-## Channel force-join
-
-Channel force-join support is optional and disabled by default. No channel URL is configured in the package. Applications can enable and configure this feature when the corresponding integration is implemented for their deployment.
-
 ## Terminal branding
 
 The terminal banner uses the STAIN identity. The npm package and public API remain branded as `@iamvanss/baileys`.
 
 ## Contact
 
-- Telegram: https://t.me/heisevanss
-- WhatsApp: https://wa.me/2348132589873
+[![Telegram](https://img.shields.io/badge/Telegram-@heisevanss-229ED9?logo=telegram&logoColor=white)](https://t.me/heisevanss)
+[![WhatsApp](https://img.shields.io/badge/WhatsApp-Chat-25D366?logo=whatsapp&logoColor=white)](https://wa.me/2348132589873)
 
 ## Compatibility
 
