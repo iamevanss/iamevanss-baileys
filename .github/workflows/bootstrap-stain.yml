@@ -18,40 +18,61 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Fetch Baileys ecosystem bases
+      - name: Fetch selected Baileys implementations
         run: |
           git clone --depth 1 https://github.com/XazepysK/wbails.git /tmp/wbails
           git clone --depth 1 https://github.com/vanSnowi/baileys.git /tmp/vansnowi
 
       - name: Populate functional Baileys base
         run: |
-          rm -rf lib WAProto
+          rm -rf lib WAProto engine-requirements.js
           cp -R /tmp/wbails/lib ./lib
           cp -R /tmp/wbails/WAProto ./WAProto
           cp /tmp/wbails/engine-requirements.js ./engine-requirements.js
 
-      - name: Add Vansnowi storage/auth improvements
+      - name: Add storage and SQL-auth improvements
         run: |
-          mkdir -p lib/Store lib/Utils
           cp /tmp/vansnowi/lib/Store/make-cache-manager-store.js lib/Store/make-cache-manager-store.js
           cp /tmp/vansnowi/lib/Utils/use-sqlite-auth-state.js lib/Utils/use-sqlite-auth-state.js
           python3 - <<'PY'
           from pathlib import Path
           p = Path('lib/Store/index.js')
           text = p.read_text()
-          if 'make-cache-manager-store.js' not in text:
+          if "./make-cache-manager-store.js" not in text:
               text += "\nexport * from './make-cache-manager-store.js';\nexport { default as makeCacheManagerStore } from './make-cache-manager-store.js';\n"
           p.write_text(text)
 
           p = Path('lib/Utils/index.js')
           text = p.read_text()
-          if 'use-sqlite-auth-state.js' not in text:
+          if "./use-sqlite-auth-state.js" not in text:
               text += "\nexport * from './use-sqlite-auth-state.js';\n"
           p.write_text(text)
           PY
 
-      - name: Install STAIN branding
+      - name: Add optional channel force-join feature
         run: |
+          cat > lib/Features/channel-force-join.js <<'EOF'
+          export const STAIN_CHANNEL_CONFIG = Object.freeze({
+              enabled: false,
+              url: null
+          })
+
+          export const isChannelForceJoinConfigured = () =>
+              STAIN_CHANNEL_CONFIG.enabled === true &&
+              typeof STAIN_CHANNEL_CONFIG.url === 'string' &&
+              STAIN_CHANNEL_CONFIG.url.length > 0
+
+          export const getChannelForceJoinConfig = () => ({
+              ...STAIN_CHANNEL_CONFIG
+          })
+          EOF
+          cat > lib/Features/index.js <<'EOF'
+          export * from './channel-force-join.js'
+          EOF
+
+      - name: Install STAIN terminal branding
+        run: |
+          mkdir -p lib/Features
           cat > lib/branding.js <<'EOF'
           const BOLD = '\x1b[1m'
           const RESET = '\x1b[0m'
@@ -66,28 +87,41 @@ jobs:
 
           export const printStainBanner = () => console.log(STAIN_BANNER)
           EOF
-
           python3 - <<'PY'
           from pathlib import Path
           p = Path('lib/index.js')
           original = p.read_text()
           marker = "export * from '../WAProto/index.js';"
           if marker not in original:
-              raise SystemExit('Unexpected wbails index layout')
-          exports = original[original.index(marker):]
-          p.write_text("import { printStainBanner } from './branding.js';\nprintStainBanner();\n" + exports)
+              raise SystemExit('Unexpected Baileys index layout')
+          prefix = "import { printStainBanner } from './branding.js';\nprintStainBanner();\n"
+          original = original.replace("import chalk from \"chalk\";\n", "")
+          start = original.find('console.log(chalk')
+          if start >= 0:
+              end = original.find("export * from '../WAProto/index.js';", start)
+              original = original[:start] + original[end:]
+          p.write_text(prefix + original)
+
+          p = Path('lib/Features/index.js')
+          index = Path('lib/index.js')
+          text = index.read_text()
+          export_line = "export * from './Features/index.js';"
+          if export_line not in text:
+              text = text.replace("export * from './Utils/index.js';", "export * from './Utils/index.js';\n" + export_line)
+          index.write_text(text)
           PY
 
-      - name: Record third-party notices
+      - name: Record upstream notices
         run: |
           mkdir -p THIRD_PARTY_NOTICES
           cp /tmp/wbails/LICENSE THIRD_PARTY_NOTICES/WBAILS-MIT.txt
           cp /tmp/vansnowi/LICENSE THIRD_PARTY_NOTICES/VANSNOWI-MIT.txt
 
-      - name: Validate package metadata
+      - name: Validate package and source
         run: |
           node -e "const p=require('./package.json'); if(p.name!=='@iamvanss/baileys') process.exit(1); console.log(p.name, p.version)"
           node --check lib/index.js
+          node --check lib/Features/channel-force-join.js
 
       - name: Commit bootstrap
         run: |
