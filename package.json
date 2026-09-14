@@ -16,7 +16,7 @@
     "build": "node scripts/validate-package.mjs",
     "build:proto": "sh WAProto/GenerateStatics.sh",
     "lint": "node scripts/validate-package.mjs",
-    "test": "node tests/smoke.mjs && node tests/auth-state.mjs",
+    "test": "node tests/smoke.mjs && node tests/auth-state.mjs && node tests/lid-resolver.mjs",
     "prepack": "node scripts/validate-package.mjs",
     "preinstall": "node ./engine-requirements.js"
   },
