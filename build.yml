@@ -17,70 +17,50 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
       - name: Fetch selected Baileys implementations
         run: |
           git clone --depth 1 https://github.com/XazepysK/wbails.git /tmp/wbails
           git clone --depth 1 https://github.com/vanSnowi/baileys.git /tmp/vansnowi
-
       - name: Populate functional Baileys base
         run: |
           rm -rf lib WAProto engine-requirements.js
           cp -R /tmp/wbails/lib ./lib
           cp -R /tmp/wbails/WAProto ./WAProto
           cp /tmp/wbails/engine-requirements.js ./engine-requirements.js
-
       - name: Add storage and SQL-auth improvements
         run: |
           cp /tmp/vansnowi/lib/Store/make-cache-manager-store.js lib/Store/make-cache-manager-store.js
           cp /tmp/vansnowi/lib/Utils/use-sqlite-auth-state.js lib/Utils/use-sqlite-auth-state.js
           python3 - <<'PY'
           from pathlib import Path
-
           p = Path('lib/Store/index.js')
           text = p.read_text()
           if "./make-cache-manager-store.js" not in text:
               text += "\nexport * from './make-cache-manager-store.js';\nexport { default as makeCacheManagerStore } from './make-cache-manager-store.js';\n"
           p.write_text(text)
-
           p = Path('lib/Utils/index.js')
           text = p.read_text()
           if "./use-sqlite-auth-state.js" not in text:
               text += "\nexport * from './use-sqlite-auth-state.js';\n"
           p.write_text(text)
           PY
-
       - name: Add optional channel force-join API
         run: |
           mkdir -p lib/Features
           cat > lib/Features/channel-force-join.js <<'EOF'
-          export const CHANNEL_FORCE_JOIN_CONFIG = Object.freeze({
-              enabled: false,
-              url: null
-          })
-
-          export const isChannelForceJoinConfigured = () =>
-              CHANNEL_FORCE_JOIN_CONFIG.enabled === true &&
-              typeof CHANNEL_FORCE_JOIN_CONFIG.url === 'string' &&
-              CHANNEL_FORCE_JOIN_CONFIG.url.length > 0
-
-          export const getChannelForceJoinConfig = () => ({
-              ...CHANNEL_FORCE_JOIN_CONFIG
-          })
+          export const CHANNEL_FORCE_JOIN_CONFIG = Object.freeze({ enabled: false, url: null })
+          export const isChannelForceJoinConfigured = () => CHANNEL_FORCE_JOIN_CONFIG.enabled === true && typeof CHANNEL_FORCE_JOIN_CONFIG.url === 'string' && CHANNEL_FORCE_JOIN_CONFIG.url.length > 0
+          export const getChannelForceJoinConfig = () => ({ ...CHANNEL_FORCE_JOIN_CONFIG })
           EOF
           cat > lib/Features/index.js <<'EOF'
           export * from './channel-force-join.js'
           EOF
-
       - name: Install package branding
         run: |
           cat > lib/branding.js <<'EOF'
           const BOLD = '\x1b[1m'
           const RESET = '\x1b[0m'
-
-          export const BAILEYS_BANNER = `${BOLD}
-          @iamvanss/baileys${RESET}`
-
+          export const BAILEYS_BANNER = `${BOLD}@iamvanss/baileys${RESET}`
           export const printBaileysBanner = () => console.log(BAILEYS_BANNER)
           EOF
           python3 - <<'PY'
@@ -105,20 +85,17 @@ jobs:
               original = original.replace("export * from './Utils/index.js';", "export * from './Utils/index.js';\n" + export_line)
           p.write_text(original)
           PY
-
       - name: Record upstream notices
         run: |
           mkdir -p THIRD_PARTY_NOTICES
           cp /tmp/wbails/LICENSE THIRD_PARTY_NOTICES/WBAILS-MIT.txt
           cp /tmp/vansnowi/LICENSE THIRD_PARTY_NOTICES/VANSNOWI-MIT.txt
-
       - name: Validate generated source
         run: |
           node -e "const p=require('./package.json'); if(p.name!=='@iamvanss/baileys') process.exit(1); console.log(p.name, p.version)"
           node --check lib/index.js
           node --check lib/Features/channel-force-join.js
           node --check lib/branding.js
-
       - name: Commit generated source
         run: |
           git config user.name 'github-actions[bot]'
@@ -128,6 +105,7 @@ jobs:
           git push
 
   verify:
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     needs: bootstrap
     steps:
@@ -136,18 +114,14 @@ jobs:
         with:
           ref: main
           fetch-depth: 1
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Install dependencies
         run: npm install --ignore-scripts
-
       - name: Smoke test package exports
         run: node -e "import('./lib/index.js').then(m => { for (const k of ['default','makeWASocket','makeInMemoryStore','makeCacheManagerStore','useSqliteAuthState','getChannelForceJoinConfig']) if (!(k in m)) throw new Error('Missing export: '+k); console.log('exports: ok') })"
-
       - name: Validate optional feature defaults
         run: node -e "import('./lib/index.js').then(m => { const c=m.getChannelForceJoinConfig(); if(c.enabled!==false || c.url!==null) throw new Error('Unexpected channel force-join defaults'); console.log('force-join: disabled by default') })"
