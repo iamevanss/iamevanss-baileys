@@ -16,8 +16,8 @@ const plain = stripAnsi(output.join('\n'))
 
 assert.equal(output.length, 10)
 assert.ok(plain.includes('━'.repeat(100)))
-assert.ok(plain.includes('██████████████╗████████████████╗'))
-assert.ok(plain.includes('████████████╔════╝╚══████╔════╝'))
+assert.ok(plain.includes('██████████████╗╗████████████████╗╗'))
+assert.ok(plain.includes('████████████╔╔════════╝╝╚╚════████╔╔════╝╝'))
 assert.ok(plain.includes('S T A I N'))
 assert.ok(plain.includes('Telegram: https://t.me/heisevanss'))
 
