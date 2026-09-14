@@ -12,15 +12,16 @@ try {
   assert.ok(first.state.creds)
   assert.ok(first.state.creds.noiseKey)
 
-  const testKey = { keyId: 'smoke-test', value: Buffer.from('iamvanss') }
-  await first.state.keys.set({ 'app-state-sync-key': { [testKey.keyId]: testKey.value } })
-  const loaded = await first.state.keys.get('app-state-sync-key', [testKey.keyId])
-  assert.ok(loaded[testKey.keyId])
-  assert.equal(Buffer.from(loaded[testKey.keyId].keyData || loaded[testKey.keyId]).toString(), 'iamvanss')
+  const testKey = 'smoke-test'
+  const testValue = Buffer.from('iamvanss')
+  await first.state.keys.set({ 'pre-key': { [testKey]: testValue } })
+  const loaded = await first.state.keys.get('pre-key', [testKey])
+  assert.ok(Buffer.isBuffer(loaded[testKey]))
+  assert.equal(loaded[testKey].toString(), 'iamvanss')
 
-  await first.state.keys.set({ 'app-state-sync-key': { [testKey.keyId]: null } })
-  const removed = await first.state.keys.get('app-state-sync-key', [testKey.keyId])
-  assert.equal(removed[testKey.keyId], undefined)
+  await first.state.keys.set({ 'pre-key': { [testKey]: null } })
+  const removed = await first.state.keys.get('pre-key', [testKey])
+  assert.equal(removed[testKey], undefined)
   first.close()
 
   const second = await useSqliteAuthState(dbPath)
