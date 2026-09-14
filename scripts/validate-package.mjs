@@ -49,6 +49,7 @@ assert.ok(pairing.includes('PAIRING_CODE_LENGTH'))
 assert.ok(pairing.includes('generatePairingCode'))
 
 const branding = await readFile('lib/branding.js', 'utf8')
-assert.ok(branding.toLowerCase().includes('ꜱᴛᴀɪɴ'))
+assert.ok(branding.includes('███████╗████████╗'))
+assert.ok(branding.includes('https://t.me/heisevanss'))
 
 console.log('Package validation passed')
