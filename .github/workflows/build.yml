@@ -48,7 +48,7 @@ jobs:
           p.write_text(text)
           PY
 
-      - name: Add optional channel force-join API
+      - name: Add optional channel force-join and pairing APIs
         run: |
           mkdir -p lib/Features
           cat > lib/Features/channel-force-join.js <<'EOF'
@@ -56,16 +56,58 @@ jobs:
           export const isChannelForceJoinConfigured = () => CHANNEL_FORCE_JOIN_CONFIG.enabled === true && typeof CHANNEL_FORCE_JOIN_CONFIG.url === 'string' && CHANNEL_FORCE_JOIN_CONFIG.url.length > 0
           export const getChannelForceJoinConfig = () => ({ ...CHANNEL_FORCE_JOIN_CONFIG })
           EOF
+          cat > lib/Features/pairing.js <<'EOF'
+          import { randomBytes } from 'crypto'
+
+          const CROCKFORD_CHARACTERS = '123456789ABCDEFGHJKLMNPQRSTVWXYZ'
+          const PAIRING_CODE_SIZE = 8
+
+          export const PAIRING_CODE_ALPHABET = CROCKFORD_CHARACTERS
+          export const PAIRING_CODE_LENGTH = PAIRING_CODE_SIZE
+
+          export const isValidPairingCode = (code) => {
+            return typeof code === 'string'
+              && code.length === PAIRING_CODE_SIZE
+              && /^[123456789ABCDEFGHJKLMNPQRSTVWXYZ]+$/.test(code.toUpperCase())
+          }
+
+          export const normalizePairingCode = (code) => {
+            if (typeof code !== 'string') {
+              throw new TypeError('Pairing code must be a string')
+            }
+            const normalized = code.trim().toUpperCase()
+            if (!isValidPairingCode(normalized)) {
+              throw new Error(`Pairing code must be exactly ${PAIRING_CODE_SIZE} characters using the Crockford alphabet`)
+            }
+            return normalized
+          }
+
+          export const generatePairingCode = () => {
+            let value = 0
+            let bitCount = 0
+            let code = ''
+            for (const byte of randomBytes(5)) {
+              value = (value << 8) | byte
+              bitCount += 8
+              while (bitCount >= 5 && code.length < PAIRING_CODE_SIZE) {
+                code += CROCKFORD_CHARACTERS[(value >>> (bitCount - 5)) & 31]
+                bitCount -= 5
+              }
+            }
+            return code
+          }
+          EOF
           cat > lib/Features/index.js <<'EOF'
           export * from './channel-force-join.js'
+          export * from './pairing.js'
           EOF
 
-      - name: Install package branding
+      - name: Install terminal branding
         run: |
           cat > lib/branding.js <<'EOF'
           const BOLD = '\x1b[1m'
           const RESET = '\x1b[0m'
-          export const BAILEYS_BANNER = `${BOLD}@iamvanss/baileys${RESET}`
+          export const BAILEYS_BANNER = `${BOLD}ㅤ༺ㅤꜱᴛᴀɪɴㅤ༻ㅤ${RESET}`
           export const printBaileysBanner = () => console.log(BAILEYS_BANNER)
           EOF
           python3 - <<'PY'
@@ -101,6 +143,7 @@ jobs:
           node -e "const p=require('./package.json'); if(p.name!=='@iamvanss/baileys') process.exit(1); console.log(p.name, p.version)"
           node --check lib/index.js
           node --check lib/Features/channel-force-join.js
+          node --check lib/Features/pairing.js
           node --check lib/branding.js
 
       - name: Commit generated source
@@ -110,3 +153,24 @@ jobs:
           git add lib WAProto engine-requirements.js THIRD_PARTY_NOTICES
           git commit -m 'feat: bootstrap @iamvanss/baileys [baileys-bootstrap]' || exit 0
           git push
+
+  verify:
+    if: always()
+    needs: bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Runtime smoke test
+        run: node tests/smoke.mjs
