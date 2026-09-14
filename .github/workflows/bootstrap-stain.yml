@@ -70,19 +70,12 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path('lib/index.js')
-          text = p.read_text()
-          lines = text.splitlines()
-          filtered = []
-          for line in lines:
-              if 'from "chalk"' in line or "from 'chalk'" in line:
-                  continue
-              if 'Baileys modified by:' in line or 'Follow t.me/' in line or '▀▀▀█' in line or '░░█░' in line or '░▐▌░' in line:
-                  continue
-              if 'console.log(chalk' in line:
-                  continue
-              filtered.append(line)
-          text = "import { printStainBanner } from './branding.js';\nprintStainBanner();\n" + '\n'.join(filtered) + '\n'
-          p.write_text(text)
+          original = p.read_text()
+          marker = "export * from '../WAProto/index.js';"
+          if marker not in original:
+              raise SystemExit('Unexpected wbails index layout')
+          exports = original[original.index(marker):]
+          p.write_text("import { printStainBanner } from './branding.js';\nprintStainBanner();\n" + exports)
           PY
 
       - name: Record third-party notices
@@ -94,6 +87,7 @@ jobs:
       - name: Validate package metadata
         run: |
           node -e "const p=require('./package.json'); if(p.name!=='@iamvanss/baileys') process.exit(1); console.log(p.name, p.version)"
+          node --check lib/index.js
 
       - name: Commit bootstrap
         run: |
