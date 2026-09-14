@@ -1,0 +1,104 @@
+name: Bootstrap STAIN Baileys
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: ${{ !contains(github.event.head_commit.message, '[stain-bootstrap]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout STAIN
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch Baileys ecosystem bases
+        run: |
+          git clone --depth 1 https://github.com/XazepysK/wbails.git /tmp/wbails
+          git clone --depth 1 https://github.com/vanSnowi/baileys.git /tmp/vansnowi
+
+      - name: Populate functional Baileys base
+        run: |
+          rm -rf lib WAProto
+          cp -R /tmp/wbails/lib ./lib
+          cp -R /tmp/wbails/WAProto ./WAProto
+          cp /tmp/wbails/engine-requirements.js ./engine-requirements.js
+
+      - name: Add Vansnowi storage/auth improvements
+        run: |
+          mkdir -p lib/Store lib/Utils
+          cp /tmp/vansnowi/lib/Store/make-cache-manager-store.js lib/Store/make-cache-manager-store.js
+          cp /tmp/vansnowi/lib/Utils/use-sqlite-auth-state.js lib/Utils/use-sqlite-auth-state.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/Store/index.js')
+          text = p.read_text()
+          if 'make-cache-manager-store.js' not in text:
+              text += "\nexport * from './make-cache-manager-store.js';\nexport { default as makeCacheManagerStore } from './make-cache-manager-store.js';\n"
+          p.write_text(text)
+
+          p = Path('lib/Utils/index.js')
+          text = p.read_text()
+          if 'use-sqlite-auth-state.js' not in text:
+              text += "\nexport * from './use-sqlite-auth-state.js';\n"
+          p.write_text(text)
+          PY
+
+      - name: Install STAIN branding
+        run: |
+          cat > lib/branding.js <<'EOF'
+          const BOLD = '\x1b[1m'
+          const RESET = '\x1b[0m'
+
+          export const STAIN_BANNER = `${BOLD}
+          ███████╗████████╗ █████╗ ██╗███╗   ██╗
+          ██╔════╝╚══██╔══╝██╔══██╗██║████╗  ██║
+          ███████╗   ██║   ███████║██║██╔██╗ ██║
+          ╚════██║   ██║   ██╔══██║██║██║╚██╗██║
+          ███████║   ██║   ██║  ██║██║██║ ╚████║
+          ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝${RESET}`
+
+          export const printStainBanner = () => console.log(STAIN_BANNER)
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/index.js')
+          text = p.read_text()
+          lines = text.splitlines()
+          filtered = []
+          for line in lines:
+              if 'from "chalk"' in line or "from 'chalk'" in line:
+                  continue
+              if 'Baileys modified by:' in line or 'Follow t.me/' in line or '▀▀▀█' in line or '░░█░' in line or '░▐▌░' in line:
+                  continue
+              if 'console.log(chalk' in line:
+                  continue
+              filtered.append(line)
+          text = "import { printStainBanner } from './branding.js';\nprintStainBanner();\n" + '\n'.join(filtered) + '\n'
+          p.write_text(text)
+          PY
+
+      - name: Record third-party notices
+        run: |
+          mkdir -p THIRD_PARTY_NOTICES
+          cp /tmp/wbails/LICENSE THIRD_PARTY_NOTICES/WBAILS-MIT.txt
+          cp /tmp/vansnowi/LICENSE THIRD_PARTY_NOTICES/VANSNOWI-MIT.txt
+
+      - name: Validate package metadata
+        run: |
+          node -e "const p=require('./package.json'); if(p.name!=='@iamvanss/baileys') process.exit(1); console.log(p.name, p.version)"
+
+      - name: Commit bootstrap
+        run: |
+          git config user.name 'STAIN Bot'
+          git config user.email 'actions@github.com'
+          git add lib WAProto engine-requirements.js THIRD_PARTY_NOTICES
+          git commit -m 'feat: bootstrap STAIN Baileys [stain-bootstrap]' || exit 0
+          git push
