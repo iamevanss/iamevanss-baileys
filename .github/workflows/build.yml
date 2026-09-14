@@ -1,0 +1,37 @@
+name: Verify @iamvanss/baileys
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Validate JavaScript
+        run: |
+          node --check lib/index.js
+          node --check lib/Features/channel-force-join.js
+          node --check lib/Features/pairing.js
+          node --check lib/branding.js
+          node --check lib/Utils/use-sqlite-auth-state.js
+
+      - name: Runtime smoke test
+        run: node tests/smoke.mjs
