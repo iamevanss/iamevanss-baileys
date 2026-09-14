@@ -4,7 +4,6 @@
   "description": "A customized WhatsApp Web API library built on the Baileys ecosystem, with pairing, authentication, connection handling, media support, events, and extensible utilities.",
   "type": "module",
   "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "files": ["lib/**/*", "WAProto/**/*", "engine-requirements.js"],
   "keywords": ["whatsapp", "baileys", "whatsapp-web", "whatsapp-bot", "multi-device"],
   "homepage": "https://github.com/iamevanss/iamevanss-baileys",
