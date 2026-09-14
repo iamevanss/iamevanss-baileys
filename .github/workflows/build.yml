@@ -32,6 +32,12 @@ jobs:
           node --check lib/Features/pairing.js
           node --check lib/branding.js
           node --check lib/Utils/use-sqlite-auth-state.js
+          node --check lib/Store/make-cache-manager-store.js
 
-      - name: Runtime smoke test
-        run: node tests/smoke.mjs
+      - name: Runtime smoke tests
+        run: |
+          node tests/smoke.mjs
+          node tests/auth-state.mjs
+
+      - name: Validate package contents
+        run: npm pack --dry-run --ignore-scripts
