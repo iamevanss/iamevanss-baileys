@@ -58,30 +58,17 @@ jobs:
           EOF
           cat > lib/Features/pairing.js <<'EOF'
           import { randomBytes } from 'crypto'
-
           const CROCKFORD_CHARACTERS = '123456789ABCDEFGHJKLMNPQRSTVWXYZ'
           const PAIRING_CODE_SIZE = 8
-
           export const PAIRING_CODE_ALPHABET = CROCKFORD_CHARACTERS
           export const PAIRING_CODE_LENGTH = PAIRING_CODE_SIZE
-
-          export const isValidPairingCode = (code) => {
-            return typeof code === 'string'
-              && code.length === PAIRING_CODE_SIZE
-              && /^[123456789ABCDEFGHJKLMNPQRSTVWXYZ]+$/.test(code.toUpperCase())
-          }
-
+          export const isValidPairingCode = (code) => typeof code === 'string' && code.length === PAIRING_CODE_SIZE && /^[123456789ABCDEFGHJKLMNPQRSTVWXYZ]+$/.test(code.toUpperCase())
           export const normalizePairingCode = (code) => {
-            if (typeof code !== 'string') {
-              throw new TypeError('Pairing code must be a string')
-            }
+            if (typeof code !== 'string') throw new TypeError('Pairing code must be a string')
             const normalized = code.trim().toUpperCase()
-            if (!isValidPairingCode(normalized)) {
-              throw new Error(`Pairing code must be exactly ${PAIRING_CODE_SIZE} characters using the Crockford alphabet`)
-            }
+            if (!isValidPairingCode(normalized)) throw new Error(`Pairing code must be exactly ${PAIRING_CODE_SIZE} characters using the Crockford alphabet`)
             return normalized
           }
-
           export const generatePairingCode = () => {
             let value = 0
             let bitCount = 0
@@ -115,20 +102,16 @@ jobs:
           p = Path('lib/index.js')
           original = p.read_text().replace('import chalk from "chalk";\n', '')
           marker = "export * from '../WAProto/index.js';"
-          if marker not in original:
-              raise SystemExit('Unexpected Baileys index layout')
+          if marker not in original: raise SystemExit('Unexpected Baileys index layout')
           start = original.find('console.log(chalk')
           if start >= 0:
               end = original.find(marker, start)
-              if end < 0:
-                  raise SystemExit('Unable to remove existing banner')
+              if end < 0: raise SystemExit('Unable to remove existing banner')
               original = original[:start] + original[end:]
           prefix = "import { printBaileysBanner } from './branding.js';\nprintBaileysBanner();\n"
-          if not original.startswith("import { printBaileysBanner }"):
-              original = prefix + original
+          if not original.startswith("import { printBaileysBanner }"): original = prefix + original
           export_line = "export * from './Features/index.js';"
-          if export_line not in original:
-              original = original.replace("export * from './Utils/index.js';", "export * from './Utils/index.js';\n" + export_line)
+          if export_line not in original: original = original.replace("export * from './Utils/index.js';", "export * from './Utils/index.js';\n" + export_line)
           p.write_text(original)
           PY
 
