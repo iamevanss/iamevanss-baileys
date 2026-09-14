@@ -1,4 +1,4 @@
-name: Bootstrap STAIN Baileys
+name: Build @iamvanss/baileys
 
 on:
   push:
@@ -10,10 +10,10 @@ permissions:
 
 jobs:
   bootstrap:
-    if: ${{ !contains(github.event.head_commit.message, '[stain-bootstrap]') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[baileys-bootstrap]') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout STAIN
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -36,6 +36,7 @@ jobs:
           cp /tmp/vansnowi/lib/Utils/use-sqlite-auth-state.js lib/Utils/use-sqlite-auth-state.js
           python3 - <<'PY'
           from pathlib import Path
+
           p = Path('lib/Store/index.js')
           text = p.read_text()
           if "./make-cache-manager-store.js" not in text:
@@ -49,66 +50,60 @@ jobs:
           p.write_text(text)
           PY
 
-      - name: Add optional channel force-join feature
+      - name: Add optional channel force-join API
         run: |
+          mkdir -p lib/Features
           cat > lib/Features/channel-force-join.js <<'EOF'
-          export const STAIN_CHANNEL_CONFIG = Object.freeze({
+          export const CHANNEL_FORCE_JOIN_CONFIG = Object.freeze({
               enabled: false,
               url: null
           })
 
           export const isChannelForceJoinConfigured = () =>
-              STAIN_CHANNEL_CONFIG.enabled === true &&
-              typeof STAIN_CHANNEL_CONFIG.url === 'string' &&
-              STAIN_CHANNEL_CONFIG.url.length > 0
+              CHANNEL_FORCE_JOIN_CONFIG.enabled === true &&
+              typeof CHANNEL_FORCE_JOIN_CONFIG.url === 'string' &&
+              CHANNEL_FORCE_JOIN_CONFIG.url.length > 0
 
           export const getChannelForceJoinConfig = () => ({
-              ...STAIN_CHANNEL_CONFIG
+              ...CHANNEL_FORCE_JOIN_CONFIG
           })
           EOF
           cat > lib/Features/index.js <<'EOF'
           export * from './channel-force-join.js'
           EOF
 
-      - name: Install STAIN terminal branding
+      - name: Install package branding
         run: |
-          mkdir -p lib/Features
           cat > lib/branding.js <<'EOF'
           const BOLD = '\x1b[1m'
           const RESET = '\x1b[0m'
 
-          export const STAIN_BANNER = `${BOLD}
-          ███████╗████████╗ █████╗ ██╗███╗   ██╗
-          ██╔════╝╚══██╔══╝██╔══██╗██║████╗  ██║
-          ███████╗   ██║   ███████║██║██╔██╗ ██║
-          ╚════██║   ██║   ██╔══██║██║██║╚██╗██║
-          ███████║   ██║   ██║  ██║██║██║ ╚████║
-          ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝${RESET}`
+          export const BAILEYS_BANNER = `${BOLD}
+          @iamvanss/baileys${RESET}`
 
-          export const printStainBanner = () => console.log(STAIN_BANNER)
+          export const printBaileysBanner = () => console.log(BAILEYS_BANNER)
           EOF
           python3 - <<'PY'
           from pathlib import Path
           p = Path('lib/index.js')
           original = p.read_text()
+          original = original.replace('import chalk from "chalk";\n', '')
           marker = "export * from '../WAProto/index.js';"
           if marker not in original:
               raise SystemExit('Unexpected Baileys index layout')
-          prefix = "import { printStainBanner } from './branding.js';\nprintStainBanner();\n"
-          original = original.replace("import chalk from \"chalk\";\n", "")
           start = original.find('console.log(chalk')
           if start >= 0:
-              end = original.find("export * from '../WAProto/index.js';", start)
+              end = original.find(marker, start)
+              if end < 0:
+                  raise SystemExit('Unable to remove existing banner')
               original = original[:start] + original[end:]
-          p.write_text(prefix + original)
-
-          p = Path('lib/Features/index.js')
-          index = Path('lib/index.js')
-          text = index.read_text()
+          prefix = "import { printBaileysBanner } from './branding.js';\nprintBaileysBanner();\n"
+          if not original.startswith("import { printBaileysBanner }"):
+              original = prefix + original
           export_line = "export * from './Features/index.js';"
-          if export_line not in text:
-              text = text.replace("export * from './Utils/index.js';", "export * from './Utils/index.js';\n" + export_line)
-          index.write_text(text)
+          if export_line not in original:
+              original = original.replace("export * from './Utils/index.js';", "export * from './Utils/index.js';\n" + export_line)
+          p.write_text(original)
           PY
 
       - name: Record upstream notices
@@ -117,16 +112,17 @@ jobs:
           cp /tmp/wbails/LICENSE THIRD_PARTY_NOTICES/WBAILS-MIT.txt
           cp /tmp/vansnowi/LICENSE THIRD_PARTY_NOTICES/VANSNOWI-MIT.txt
 
-      - name: Validate package and source
+      - name: Validate generated source
         run: |
           node -e "const p=require('./package.json'); if(p.name!=='@iamvanss/baileys') process.exit(1); console.log(p.name, p.version)"
           node --check lib/index.js
           node --check lib/Features/channel-force-join.js
+          node --check lib/branding.js
 
-      - name: Commit bootstrap
+      - name: Commit generated source
         run: |
-          git config user.name 'STAIN Bot'
-          git config user.email 'actions@github.com'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add lib WAProto engine-requirements.js THIRD_PARTY_NOTICES
-          git commit -m 'feat: bootstrap STAIN Baileys [stain-bootstrap]' || exit 0
+          git commit -m 'feat: bootstrap @iamvanss/baileys [baileys-bootstrap]' || exit 0
           git push
