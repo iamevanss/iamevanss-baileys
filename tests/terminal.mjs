@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
-import { BAILEYS_TELEGRAM, printBaileysBanner } from '../lib/branding.js'
+import { printReferenceBanner } from '../lib/Utils/terminal.js'
 
 const output = []
 const originalLog = console.log
 console.log = (...args) => output.push(args.join(' '))
 
 try {
-  printBaileysBanner()
+  printReferenceBanner()
 } finally {
   console.log = originalLog
 }
@@ -14,15 +14,15 @@ try {
 const stripAnsi = value => value.replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '')
 const plain = stripAnsi(output.join('\n'))
 
-const expectedBanner = `███████╗████████╗ █████╗ ██╗███╗   ██╗
-██╔════╝╚══██╔══╝██╔══██╗██║████╗  ██║
-███████╗   ██║   ███████║██║██╔██╗ ██║
-╚════██║   ██║   ██╔══██║██║██║╚██╗██║
-███████║   ██║   ██║  ██║██║██║ ╚████║
-╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝`
+assert.equal(output.length, 10)
+assert.match(plain, /━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/)
+assert.match(plain, /███████╗████████╗ █████╗ ██╗███╗   ██╗/)
+assert.match(plain, /██╔════╝╚══██╔══╝██╔══██╗██║████╗  ██║/)
+assert.match(plain, /███████╗   ██║   ███████║██║██╔██╗ ██║/)
+assert.match(plain, /╚════██║   ██║   ██╔══██║██║██║╚██╗██║/)
+assert.match(plain, /███████║   ██║   ██║  ██║██║██║ ╚████║/)
+assert.match(plain, /╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝/)
+assert.match(plain, /S T A I N/)
+assert.match(plain, /Telegram: https:\/\/t\.me\/heisevanss/)
 
-assert.equal(output.length, 2)
-assert.equal(stripAnsi(output[0]), expectedBanner)
-assert.equal(stripAnsi(output[1]), `Telegram: ${BAILEYS_TELEGRAM}`)
-
-console.log('Terminal branding tests passed')
+console.log('Terminal reference banner tests passed')
