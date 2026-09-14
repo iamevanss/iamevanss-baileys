@@ -18,6 +18,7 @@
     "lint": "node scripts/validate-package.mjs",
     "test": "node tests/smoke.mjs && node tests/auth-state.mjs && node tests/lid-resolver.mjs && node tests/terminal.mjs",
     "prepack": "node scripts/validate-package.mjs",
+    "prepublishOnly": "npm test",
     "preinstall": "node ./engine-requirements.js"
   },
   "dependencies": {
