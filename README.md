@@ -1,62 +1,80 @@
-# STAIN Baileys
+# @iamvanss/baileys
 
-A custom, developer-focused WhatsApp Web library built from Baileys with selected improvements, integrations, and utilities from the wider Baileys ecosystem.
+A customized WhatsApp Web API library built on the Baileys ecosystem. It keeps the familiar Baileys developer experience while adding pairing, authentication, connection, storage, protocol, and utility improvements.
 
-## Package
+## Install
 
 ```bash
 npm install @iamvanss/baileys
 ```
 
-## Project direction
+## Highlights
 
-STAIN Baileys is being developed with a focus on:
-
-- Multi-device support
+- Multi-device WhatsApp Web support
 - QR login
-- Pairing-code login, including custom 8-character codes
-- Session self-healing and improved reconnection
-- WhatsApp Rust Bridge integration
+- Pairing-code login with optional custom 8-character codes
+- Session persistence and reconnection handling
+- WhatsApp Rust Bridge support
 - Reduced protobuf footprint where practical
-- In-memory and persistent stores
-- Cache-manager based caching
-- SQL authentication options
+- `makeInMemoryStore` and persistent store utilities
+- Cache-manager store support
+- SQLite authentication state
 - Communities
 - Interop
 - Privacy APIs
 - GraphQL support
 - Newsletter support
-- MEX and related protocol functionality
-- Luxu integrations where useful
-- Advanced message builders
-- A clean, familiar Baileys-compatible developer experience
+- MEX protocol utilities
+- Luxu protocol utilities
+- Advanced message-builder APIs
+- Familiar Baileys-compatible socket architecture
+- Optional channel force-join support
 
-## Branding
+## Pairing code
 
-```text
-███████╗████████╗ █████╗ ██╗███╗   ██╗
-██╔════╝╚══██╔══╝██╔══██╗██║████╗  ██║
-███████╗   ██║   ███████║██║██╔██╗ ██║
-╚════██║   ██║   ██╔══██║██║██║╚██╗██║
-███████║   ██║   ██║  ██║██║██║ ╚████║
-╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝
+```js
+const code = await sock.requestPairingCode('234XXXXXXXXXX')
 ```
 
-Terminal output and CLI-facing utilities will use **STAIN** as the project identity.
+Custom 8-character pairing codes are supported by the pairing layer when a custom code is supplied through the socket implementation.
 
-## Channel / force-join support
+## Authentication
 
-A channel force-join capability is planned as an optional feature. No channel URL is configured in the project at this stage.
+For normal deployments, use a persistent authentication state. SQLite authentication is available through `useSqliteAuthState` and uses Node's built-in `node:sqlite` support.
+
+```js
+const { state, saveCreds } = await useSqliteAuthState('./auth/auth.db')
+```
+
+SQLite auth requires a Node.js release that provides `node:sqlite` (Node 22.5+).
+
+## Stores
+
+The package exposes the existing in-memory store along with persistent and cache-manager based store utilities.
+
+```js
+import { makeInMemoryStore, makeCacheManagerStore } from '@iamvanss/baileys'
+```
+
+## Channel force-join
+
+Channel force-join support is optional and disabled by default. No channel URL is configured in the package. Applications can enable and configure this feature when the corresponding integration is implemented for their deployment.
+
+## Terminal branding
+
+The terminal banner uses the STAIN identity. The npm package and public API remain branded as `@iamvanss/baileys`.
 
 ## Contact
 
 - Telegram: https://t.me/heisevanss
 - WhatsApp: https://wa.me/2348132589873
 
-## Status
+## Compatibility
 
-Active development. The repository is intentionally being assembled in stages so upstream and forked implementations can be evaluated before features are merged.
+The package targets Node.js 20 or newer. Some optional features have additional runtime requirements, such as SQLite authentication requiring Node 22.5+.
 
-## Credits and licensing
+## License
 
-This project builds on open-source work in the Baileys ecosystem. Individual components will retain their applicable upstream copyright notices, licenses, and attribution requirements. See the repository license and source headers for details.
+MIT. See `LICENSE`.
+
+This project incorporates open-source work from the Baileys ecosystem. Upstream copyright notices, licenses, and attribution requirements are retained where applicable. See `THIRD_PARTY_NOTICES/` for recorded upstream licenses.
